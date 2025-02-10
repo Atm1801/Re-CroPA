@@ -1,0 +1,4 @@
+vqa, target num:10, total attack num:10,best loss: 0.11186935007572174
+vqa_specific, target num:10, total attack num:10,best loss: 0.11186935007572174
+cls, target num:19, total attack num:19,best loss: 0.11186935007572174
+cap, target num:11, total attack num:19,best loss: 0.11186935007572174
