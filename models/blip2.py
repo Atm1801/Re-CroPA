@@ -3,7 +3,7 @@ from typing import List
 from PIL import Image
 import torch
 
-from transformers import Blip2Processor, Blip2ForConditionalGeneration,AutoTokenizer,BlipImageProcessor
+from transformers import Blip2Processor, Blip2ForConditionalGeneration,AutoTokenizer,BlipImageProcessor,AutoProcessor
 from open_flamingo.eval.eval_model import BaseEvalModel
 from torchvision import transforms
 from transformers.image_utils  import OPENAI_CLIP_MEAN,OPENAI_CLIP_STD
@@ -28,7 +28,7 @@ class EvalModel(BaseEvalModel):
         model_args["device"] = int(model_args["device"])
 
         self.device = model_args["device"] if model_args["device"] >= 0 else "cpu"
-        self.processor = Blip2Processor.from_pretrained(model_args["processor_path"])
+        self.processor = Blip2Processor.from_pretrained(model_args["processor_path"],use_fast=False)
         self.model = Blip2ForConditionalGeneration.from_pretrained(
             model_args["lm_path"]
         )

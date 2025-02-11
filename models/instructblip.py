@@ -29,7 +29,7 @@ class EvalModel(BaseEvalModel):
         model_args["device"] = int(model_args["device"])
 
         self.device = model_args["device"] if model_args["device"] >= 0 else "cpu"
-        self.processor = InstructBlipProcessor.from_pretrained(model_args["processor_path"])
+        self.processor = InstructBlipProcessor.from_pretrained(model_args["processor_path"],use_fast=False)
         self.model = InstructBlipForConditionalGeneration.from_pretrained(
             model_args["lm_path"]
         ).half()

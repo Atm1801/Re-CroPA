@@ -23,7 +23,7 @@ from utils.eval_tools import (
 )
 # from diffusers import StableDiffusionXLPipeline
 # import torch
-# from PIL import Image
+from PIL import Image
 # from IPython.display import display
 # from torchvision import transforms
 # from transformers import ViTFeatureExtractor, ViTModel
@@ -252,17 +252,13 @@ def attack(
                                         truncation=True,return_tensors="pt",max_length=2000).to(device)
                 qformer_input_ids_list.append(qformer_text_encoding["input_ids"])
                 qformer_attention_mask_list.append(qformer_text_encoding["attention_mask"])
-        
-        target_text = "a dark scaled fish in the dark part of ocean"
-        generated_image = generate_image(target_text)
-        aligned_image = pgd_align_images(budget=0.03, timesteps=100, gen_img=generated_image, target_img=item["image"])
             
         # create a learnable noise tensor and embedding dict
         if model_name in ["blip2","instructblip"]:
-            noise = torch.tensor(np.array(aligned_image) / 255.0, requires_grad=True, device=device).permute(2, 0, 1).unsqueeze(0)
+            noise = torch.randn([1,3,224,224], requires_grad=True,device = device)
             lm_emb = eval_model.model.language_model.get_input_embeddings()
         else:
-            noise = torch.tensor(np.array(aligned_image) / 255.0, requires_grad=True, device=device).permute(2, 0, 1).unsqueeze(0).unsqueeze(0)
+            noise = torch.randn([1,1,3,224,224], requires_grad=True,device = device)
             lm_emb = eval_model.model.lang_encoder.get_input_embeddings()   
             
         input_x_original = eval_model._prepare_images_no_normalize(item_images).to(device)        
@@ -539,99 +535,7 @@ if __name__=="__main__":
         prompt_num_to_alpha2 = config_args.prompt_num_to_alpha2    
         alpha2 = prompt_num_to_alpha2[prompt_num]
 
-    def generate_image(prompt: str) -> Image.Image:
-        """
-        Generates an image from a text prompt using SDXL 1.0.
-
-        Args:
-            prompt (str): The text description for the image generation.
-
-        Returns:
-            Image.Image: The generated PIL image.
-        """
-        # Use GPU if available; otherwise fall back on CPU.
-        device = "cuda" if torch.cuda.is_available() else "cpu"
-        global pipe
-        pipe = pipe.to(device)
-
-        # Generate the image.
-        result = pipe(prompt=prompt, num_inference_steps=50, guidance_scale=7.5)
-
-        # Extract the first image from the result.
-        generated_image = result.images[0]
-        return generated_image
-        
-    target_text = "a dark scaled fish in the dark part of ocean"
-    image = generate_image(target_text)
-    display(image)
-
-    def pgd_align_images(budget: float, timesteps: int, gen_img_path: str, target_img_path: str) -> Image.Image:
-        """
-        Aligns ViT embeddings between generated and target images using Projected Gradient Descent (PGD).
-
-        Args:
-            budget (float): Maximum allowed perturbation (0-1 range)
-            timesteps (int): Number of optimization steps
-            gen_img_path (str): Path to generated image to modify
-            target_img_path (str): Path to target reference image
-
-        Returns:
-            PIL.Image: Modified image with aligned embeddings
-        """
-        # Load and preprocess images
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor()
-        ])
-
-        gen_img = transform(image.convert("RGB")).unsqueeze(0)
-        target_img = transform(Image.open(target_img_path).convert("RGB")).unsqueeze(0)
-
-        # Initialize model
-        model = ViTModel.from_pretrained("openai/clip-vit-large-patch14")
-        model.eval()
-
-        # Get target embedding
-        with torch.no_grad():
-            target_embedding = model(pixel_values=target_img).last_hidden_state.mean(dim=1)
-
-        # Initialize perturbed image
-        perturbed = gen_img.clone().requires_grad_(True)
-        optimizer = torch.optim.Adam([perturbed], lr=1)
-
-        # PGD optimization loop
-        for i in range(timesteps):
-            optimizer.zero_grad()
-            print(i)
-            # Calculate embedding loss
-            emb = model(pixel_values=perturbed).last_hidden_state.mean(dim=1)
-            loss = torch.nn.functional.mse_loss(emb, target_embedding)
-            loss.backward()
-
-            # Update with gradient descent
-            optimizer.step()
-
-            # Project perturbations to valid range
-            with torch.no_grad():
-                delta = torch.clamp(perturbed - gen_img, -budget, budget)
-                perturbed.copy_(torch.clamp(gen_img + delta, 0, 1))
-
-        # Convert to PIL image
-        return transforms.ToPILImage()(perturbed.squeeze())
-
-    # Example usage
-    modified_image = pgd_align_images(
-        budget=0.03,
-        timesteps=100,
-        gen_img_path="sdxl_generated_image_tobe.png",  # Your generated image path
-        target_img_path="sdxl_generated_image_target.png"       # Your target image path
-    )
-
-    # Display and save
-    display(modified_image)
-    modified_image.save("aligned_image.png")
-    torch.cuda.empty_cache()
-
+    target_text = "unknown"
     iter_num = 1701
     
     attack(
