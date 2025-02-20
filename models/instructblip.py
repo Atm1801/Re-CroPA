@@ -9,6 +9,7 @@ from transformers import InstructBlipProcessor, InstructBlipForConditionalGenera
 from open_flamingo.eval.eval_model import BaseEvalModel
 from torchvision import transforms
 from transformers.image_utils import (OPENAI_CLIP_MEAN, OPENAI_CLIP_STD)
+
 class EvalModel(BaseEvalModel):
     """BLIP-2 model evaluation.
 
@@ -27,9 +28,51 @@ class EvalModel(BaseEvalModel):
         ), "BLIP-2 requires processor_path, lm_path, and device arguments to be specified"
 
         model_args["device"] = int(model_args["device"])
+        
+        # tokenizer = AutoTokenizer.from_pretrained(model_args["processor_path"], use_fast=False)
+
+        # # Fix token indexing issue
+        # if "<video>" in tokenizer.get_added_vocab():
+        #     tokenizer.add_tokens(["<video>"], special_tokens=True)
+
+        # # Save and reload the fixed tokenizer
+        # tokenizer.save_pretrained("fixed_tokenizer")
+        # processor = InstructBlipProcessor.from_pretrained("fixed_tokenizer", use_fast=False)
+
+            # vocab_file = os.path.join(model_path, 'vocab.json')
+    # if os.path.exists(vocab_file):
+    #     with open(vocab_file, 'r') as f:
+    #         vocab = json.load(f)
+            
+    #     # Get all special tokens and their indices
+    #     special_tokens = {k: v for k, v in vocab.items() if k.startswith('<') and k.endswith('>')}
+        
+    #     # Sort special tokens by their index
+    #     sorted_tokens = sorted(special_tokens.items(), key=lambda x: x[1])
+        
+    #     # Reassign indices to make them consecutive
+    #     base_idx = min(special_tokens.values())
+    #     for idx, (token, _) in enumerate(sorted_tokens):
+    #         vocab[token] = base_idx + idx
+            
+    #     # Save the modified vocabulary
+    #     temp_vocab_file = os.path.join(model_path, 'vocab_fixed.json')
+    #     with open(temp_vocab_file, 'w') as f:
+    #         json.dump(vocab, f)
+            
+    #     # Load the tokenizer with the fixed vocabulary
+    #     tokenizer = AutoTokenizer.from_pretrained(
+    #         model_path,
+    #         vocab_file=temp_vocab_file,
+    #         use_fast=False,
+    #         add_prefix_space=False
+    #     )
+        
+    #     # Clean up temporary file
+    #     os.remove(temp_vocab_file)
 
         self.device = model_args["device"] if model_args["device"] >= 0 else "cpu"
-        self.processor = InstructBlipProcessor.from_pretrained(model_args["processor_path"],use_fast=False)
+        self.processor = InstructBlipProcessor.from_pretrained(model_args["processor_path"],revision="ef9d8b3bcb7a0422d7b33a8917e867944312ef22")
         self.model = InstructBlipForConditionalGeneration.from_pretrained(
             model_args["lm_path"]
         ).half()

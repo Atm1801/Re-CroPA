@@ -1,5 +1,5 @@
 {
-    "hf_login_token": "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",
+    "hf_login_token": "",
     "data_root": "/teamspace/studios/this_studio/dataset",
     "flamingo_checkpoint_path": "/teamspace/studios/this_studio/checkpoint.pt",
     "eval_batch_size": 10
